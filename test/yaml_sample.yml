@@ -1,0 +1,27 @@
+estimator:
+  type: svm
+  #init:
+  hyperparameter: hp.svc.cool
+  generate: all # random:10
+
+hyperparameters:
+  name: hp.svc.cool
+  values:
+    C:
+      - 1
+      - 0.2
+      - 0.003
+    kernel:
+      - rbf
+      - linear
+
+input:
+  filename: 'sample.csv' # a csv or an excel file
+  features:
+    - age
+    - smoker
+    - gender
+  response: cancer
+  pre:
+    impute:
+      age: 'mean' # or 'mode', 'median'
