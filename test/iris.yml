@@ -11,7 +11,7 @@ estimators:
       kernel:
         - rbf
         - linear
-    generate: all # random:10
+    generate: all
   - type: knn
     hyperparameters:
       n_neighbors:
@@ -32,8 +32,6 @@ estimators:
         - 7
     generate: random:3
 
-
-
 pre:
   features:
     - 'sepal length (cm)'
@@ -44,6 +42,5 @@ pre:
   rescale:
     - 'sepal length (cm)': standardize
     - 'sepal width (cm)': normalize
-  #vectorize:
   impute:
-    - 'petal length (cm)': mean # or mode, median
+    - 'petal length (cm)': mean
