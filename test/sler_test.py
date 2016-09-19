@@ -27,6 +27,6 @@ class TestSler(TestCase):
 
     def test_sler(self):
         iris = datasets.load_iris()
-        sler = ScikitLearnEasyRunner(iris, 'iris.yml', 10)
+        sler = ScikitLearnEasyRunner(iris, 'iris.yml')
         sler.run()
 
