@@ -10,37 +10,34 @@ import sklearn.preprocessing
 
 
 class ScikitLearnEasyRunner(object):
-    def __init__(self, input_file, config_file, output_file=None, test_percentage=10):
+    def __init__(self, _input, config_file, test_percentage=10):
         self.cfgm = ConfigManager()
         self.cfgm.load_yaml(config_file)
-        self.input_file = input_file
-        self.output_file=output_file
         self.test_percentage = test_percentage
         self.dataframe = None
         self.train_features = None
-        self.train_response = None
+        self.train_target = None
         self.test_features = None
-        self.test_response = None
+        self.test_target = None
+        self.pred_df = None
         self.estimators = {e.name: e.get_estimator() for e in self.cfgm.estimators}
+        self._load_input(_input)
 
     def _pre_process(self):
-        if self._load_input():
-            self.rescale()
-            self._impute()
-            #TODO: Where should I do vectorization?
-            self._prep_features_response()
-            return True
-        return False
+        self._rescale()
+        self._impute()
+        #TODO: Where should I do vectorization?
+        self._prep_features_target()
 
-    def rescale(self):
+    def _rescale(self):
         if self.cfgm.rescale is not None:
             for item in self.cfgm.rescale:
                 feature = item.keys()[0]
                 value = item[feature]
                 if value == 'standardize':
-                    self.dataframe[feature] = sklearn.preprocessing.StandardScaler().fit_transform(self.dataframe[feature])
+                    self.dataframe[feature] = sklearn.preprocessing.StandardScaler().fit_transform(self.dataframe[feature].reshape(-1, 1))
                 elif value in {'normalize', 'minmax'}:
-                    self.dataframe[feature] = sklearn.preprocessing.MinMaxScaler().fit_transform(self.dataframe[feature])
+                    self.dataframe[feature] = sklearn.preprocessing.MinMaxScaler().fit_transform(self.dataframe[feature].reshape(-1, 1))
 
     def _impute(self):
         if self.cfgm.impute is not None:
@@ -49,30 +46,36 @@ class ScikitLearnEasyRunner(object):
                 value = item[feature]
                 self._fillna(feature, value)
 
-    def _load_input(self):
-        if os.path.exists(self.input_file):
-            if self.input_file.endswith('.csv'):
-                self.dataframe = pd.read_csv(self.input_file)
-            elif self.input_file.endswith('.xlsx'):
-                self.dataframe = pd.read_excel(self.input_file)
+    def _load_input(self, _input):
+        if isinstance(_input, str):
+            if os.path.exists(_input):
+                if _input.endswith('.csv'):
+                    self.dataframe = pd.read_csv(_input)
+                elif _input.endswith('.xlsx'):
+                    self.dataframe = pd.read_excel(_input)
+                else:
+                    logging.error("Unable to read the input file. It has to be a csv or an xlsx file")
             else:
-                logging.error("Unable to read the input file. It has to be a csv or an xlsx file")
-                return False
+                logging.error("Input file '%s' does not exist")
+        elif isinstance(_input, pd.DataFrame):
+            self.dataframe = _input
+        elif isinstance(_input, sklearn.datasets.base.Bunch):
+            logging.info("Converting sklearn Bunch to pandas DataFrame...")
+            self.dataframe = pd.DataFrame(_input.data, columns=_input['feature_names'])
+            self.dataframe['target'] = _input.target
         else:
-            logging.error("Input file '%s' does not exist")
-            return False
-        return True
+            logging.error("Unknown input type: %s", type(_input))
 
-    def _prep_features_response(self):
-        response = self.dataframe[self.cfgm.response_name].copy()
+    def _prep_features_target(self):
+        target = self.dataframe[self.cfgm.target_name].copy()
         if self.cfgm.feature_names is None:
             features = self.dataframe.copy()
-            del features[self.cfgm.response_name]
+            del features[self.cfgm.target_name]
         else:
             features = self.dataframe[self.cfgm.feature_names].copy()
         features = pd.get_dummies(features)
-        self.train_features, self.test_features, self.train_response, self.test_response = \
-            sklearn.cross_validation.train_test_split(features, response, test_size=self.test_percentage/100.0)
+        splits = sklearn.cross_validation.train_test_split(features, target, test_size=self.test_percentage/100.0)
+        self.train_features, self.test_features, self.train_target, self.test_target = splits
 
     def _fillna(self, feature, value):
         if value == 'mean':
@@ -85,49 +88,46 @@ class ScikitLearnEasyRunner(object):
             self.dataframe[feature].fillna(value, inplace=True)
 
     def fit(self):
-        for est in self.estimators.values():
-            est.fit(self.train_features, self.train_response)
+        for name, est in self.estimators.iteritems():
+            logging.error("Training estimator: %s", name)
+            est.fit(self.train_features, self.train_target)
 
-    def OLD_predict(self):
+    def predict(self):
         self.pred_df = pd.DataFrame()
+        self.pred_df['actual'] = self.test_target
         for _type, est in self.estimators.iteritems():
-            self.pred_df[_type] = est
+            self.pred_df[_type] = est.predict(self.test_features)
         if self.cfgm.estimator_type == 'regression':
-            self.pred_df['ensemble'] = self.pred_df.mean(axis=1)
+            self.pred_df['ensemble (mean)'] = self.pred_df.mean(axis=1)
         elif self.cfgm.estimator_type == 'classification':
-            self.pred_df['ensemble'] = self.pred_df.mean(axis=1)
-        self.pred_df['actual'] = self.test_response
+            self.pred_df['ensemble (mode)'] = self.pred_df.mean(axis=1)
 
     def report(self):
-        print "Writing predictions to %s...."%self.cfgm.prediction_file
-        self.pred_df.to_csv(self.cfgm.prediction_file)
-        print "Writing report to %s...." % self.cfgm.report_file
         for name in self.estimators:
-            score = sklearn.metrics.accuracy_score(self.pred_df['actual'], self.pred_df[name])
-            print "Accuracy Score for %s: %f\n"%(name, score)
+            score = sklearn.metrics.accuracy_score(self.test_target, self.pred_df[name])
+            print "Accuracy Score for %s: %f"%(name, score)
             if hasattr(self.estimators[name], 'best_params_'):
-                print "Best parameters for %s: %s"%(name, self.estimators[name].best_params_)
+                print "Best hyper parameters for %s: %s"%(name, self.estimators[name].best_params_)
             print
 
     def run(self):
-        if self._pre_process():
-            self.fit()
-            #self.predict()
-            self.report()
+        self._pre_process()
+        self.fit()
+        self.predict()
+        self.report()
+        print self.pred_df
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("input_file", help='input file, either a csv or an xlsx file')
     parser.add_argument("config_file", help='config file, given as a yaml')
-    parser.add_argument("--output", help='output file')
     parser.add_argument("--testpercentage", help='percentage of rows used for testing. default is 10', type=int)
 
     args = parser.parse_args()
     output_file = args.output
     test_percentage = 10 if args.testpercentage is None else args.testpercentage
-    print args.input_file, args.config_file, output_file, test_percentage
-    runner = ScikitLearnEasyRunner(args.input_file, args.config_file)
-    runner.run()
+    sler = ScikitLearnEasyRunner(args.input_file, args.config_file, test_percentage)
+    sler.run()
 
 

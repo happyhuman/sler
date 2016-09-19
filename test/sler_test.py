@@ -1,8 +1,10 @@
 from unittest import TestCase
 from config import ConfigManager
+from sler import ScikitLearnEasyRunner
+from sklearn import datasets
 
 
-class TestConfigManager(TestCase):
+class TestSler(TestCase):
     def setUp(self):
         pass
 
@@ -19,6 +21,12 @@ class TestConfigManager(TestCase):
         self.assertEqual('all', cm.estimators[0].generate)
 
         self.assertEqual({'age', 'smoker', 'gender'}, set(cm.feature_names))
-        self.assertEqual('cancer', cm.response_name)
+        self.assertEqual('cancer', cm.target_name)
         self.assertEqual([{'age': 'standardize'}], cm.rescale)
         self.assertEqual([{'age': 'mean'}], cm.impute)
+
+    def test_sler(self):
+        iris = datasets.load_iris()
+        sler = ScikitLearnEasyRunner(iris, 'iris.yml', 10)
+        sler.run()
+

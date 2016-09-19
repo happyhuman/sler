@@ -17,7 +17,7 @@ pre:
     - age
     - smoker
     - gender
-  response: cancer
+  target: cancer
   rescale:
     - age: standardize
   #vectorize:

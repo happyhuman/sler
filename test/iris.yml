@@ -1,0 +1,49 @@
+estimators:
+  - type: svc
+    parameters:
+      degree: 4
+      random_state: 7
+    hyperparameters:
+      C:
+        - 1
+        - 0.2
+        - 0.003
+      kernel:
+        - rbf
+        - linear
+    generate: all # random:10
+  - type: knn
+    hyperparameters:
+      n_neighbors:
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+  - type: randomforest
+    parameters:
+      n_estimators: 10
+    hyperparameters:
+      max_depth:
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+    generate: random:3
+
+
+
+pre:
+  features:
+    - 'sepal length (cm)'
+    - 'sepal width (cm)'
+    - 'petal length (cm)'
+    - 'petal width (cm)'
+  target: target
+  rescale:
+    - 'sepal length (cm)': standardize
+    - 'sepal width (cm)': normalize
+  #vectorize:
+  impute:
+    - 'petal length (cm)': mean # or mode, median
