@@ -25,7 +25,8 @@ sler.run()
 iris.yml is defined by:
 ```yaml
 estimators:
-  - type: svc
+  - estimator: logistic regression
+  - estimator: svc
     parameters:
       degree: 4
       random_state: 7
@@ -38,7 +39,7 @@ estimators:
         - rbf
         - linear
     generate: all
-  - type: knn
+  - estimator: knn
     hyperparameters:
       n_neighbors:
         - 2
@@ -46,7 +47,7 @@ estimators:
         - 4
         - 5
         - 6
-  - type: randomforest
+  - estimator: random forest
     parameters:
       n_estimators: 10
     hyperparameters:
@@ -70,31 +71,37 @@ pre:
     - 'sepal width (cm)': normalize
   impute:
     - 'petal length (cm)': mean
+  split: 15 # %15 percent of the data will be used for testing.
 ```
 
 By running the code above, you will get:
 
 ```
-Accuracy Score for knn: 0.933333
-Best hyper parameters for knn: {'n_neighbors': 2}
+Accuracy Score for knn: 1.000000
+Best hyper parameters for knn: {'n_neighbors': 3}
 
-Accuracy Score for randomforest: 0.933333
-Best hyper parameters for randomforest: {'max_depth': 6}
+Accuracy Score for svc: 1.000000
+Best hyper parameters for svc: {'kernel': 'rbf', 'C': 1}
 
-Accuracy Score for svc: 0.933333
-Best hyper parameters for svc: {'kernel': 'linear', 'C': 0.2}
+Accuracy Score for logistic regression: 0.913043
+Best hyper parameters for logistic regression: {}
 
-Accuracy Score for ensemble: 0.933333
+Accuracy Score for random forest: 0.956522
+Best hyper parameters for random forest: {'max_depth': 5}
 
-   knn  randomforest  svc  ensemble  actual
-0    1             1    1         1       1
-1    1             1    1         1       2
-2    0             0    0         0       0
-3    2             2    2         2       2
-4    0             0    0         0       0
-5    0             0    0         0       0
-6    2             2    2         2       2
-7    2             2    2         2       2
-8    2             2    2         2       2
-9    1             1    1         1       1
+Accuracy Score for ensemble: 1.000000
+
+   knn  svc  logistic regression  random forest  ensemble  actual
+0    0    0                    0              0         0       0
+1    0    0                    0              0         0       0
+2    1    1                    1              1         1       1
+3    1    1                    1              1         1       1
+4    2    2                    2              1         2       2
+5    2    2                    2              2         2       2
+6    1    1                    1              1         1       1
+7    0    0                    0              0         0       0
+8    0    0                    0              0         0       0
+9    0    0                    0              0         0       0
 ```
+
+Further examples can be found in the test directory.

@@ -1,5 +1,5 @@
 estimators:
-  - type: svc
+  - estimator: svc
     parameters:
       degree: 4
     hyperparameters:
@@ -23,3 +23,4 @@ pre:
   #vectorize:
   impute:
     - age: mean # or mode, median
+  split: 10
