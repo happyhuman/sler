@@ -2,9 +2,10 @@
 
 sler is a tool to simplify the usage of scikit-learn in many case.
 There is usually a number of steps required to find the best estimator:
-- rescale the numeric features through standardization or normalization
-- fill in the missing values (imputation)
+- rescale the numeric features through [standardization](http://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html) or [normalization](http://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html)
+- fill in the missing values ([imputation](https://en.wikipedia.org/wiki/Imputation_(statistics)))
 - select the features and the target
+- encoding the categorical features using [One Hot encoding](https://en.wikipedia.org/wiki/One-hot)
 - split the dataset for training and testing
 - train one or more estimators using different techniques and hyper parameters
 - evaluate the estimators by comparing their predictions against the test dataset
