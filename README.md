@@ -22,7 +22,7 @@ sler.run()
 ```
 
 iris.yml is defined by:
-```
+```yaml
 estimators:
   - type: svc
     parameters:
