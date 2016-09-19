@@ -2,7 +2,7 @@ estimators:
   - estimator: svc
     parameters:
       degree: 4
-    hyperparameters:
+    hyper parameters:
       C:
         - 1
         - 0.2

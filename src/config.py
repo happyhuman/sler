@@ -95,7 +95,7 @@ class ConfigManager(object):
         logging.debug("Estimator config is %s", estimators_cfg)
         types = set()
         for est_cfg in estimators_cfg:
-            est = EstimatorWrapper(est_cfg['estimator'], est_cfg.get('parameters'), est_cfg.get('hyperparameters'), est_cfg.get('generate'))
+            est = EstimatorWrapper(est_cfg['estimator'], est_cfg.get('parameters'), est_cfg.get('hyper parameters'), est_cfg.get('generate'))
             types.add(est._type)
             self.estimators.append(est)
         if len(types) != 1:

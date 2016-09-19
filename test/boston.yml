@@ -1,7 +1,7 @@
 estimators:
   - estimator: linear regression
   - estimator: ridge
-    hyperparameters:
+    hyper parameters:
       alpha:
          - 0.0001
          - 0.01
@@ -9,7 +9,7 @@ estimators:
          - 1
          - 10
   - estimator: lasso
-    hyperparameters:
+    hyper parameters:
       alpha:
          - 0.0001
          - 0.01
