@@ -1,6 +1,6 @@
 estimators:
   - type: svc
-    init:
+    parameters:
       degree: 4
     hyperparameters:
       C:
@@ -12,21 +12,14 @@ estimators:
         - linear
     generate: all # random:10
 
-input:
-  filename: 'sample.csv' # a csv or an excel file
-  testpercentage: 20
+pre:
   features:
     - age
     - smoker
     - gender
   response: cancer
-  pre:
-    standardize:
-      - age
-    #vectorize:
-    impute:
-      age: 'mean' # or 'mode', 'median'
-
-output:
-  predictions: 'pred.csv'
-  report: 'report.txt'
+  rescale:
+    - age: standardize
+  #vectorize:
+  impute:
+    - age: mean # or mode, median
