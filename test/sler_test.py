@@ -1,6 +1,6 @@
 from unittest import TestCase
 from config import ConfigManager
-from sler import ScikitLearnEasyRunner
+from sler import run_sler
 from sklearn import datasets
 
 
@@ -25,8 +25,11 @@ class TestSler(TestCase):
         self.assertEqual([{'age': 'standardize'}], cm.rescale)
         self.assertEqual([{'age': 'mean'}], cm.impute)
 
-    def test_sler(self):
+    def test_sler_classification(self):
         iris = datasets.load_iris()
-        sler = ScikitLearnEasyRunner(iris, 'iris.yml')
-        sler.run()
+        run_sler(iris, 'iris.yml')
+
+    def test_sler_regression(self):
+        boston = datasets.load_boston()
+        run_sler(boston, 'boston.yml')
 

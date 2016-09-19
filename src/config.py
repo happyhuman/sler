@@ -12,13 +12,15 @@ class EstimatorWrapper(object):
     _SVC_DEFAULT_H  = {}
     _SVC_DEFAULT_HP = {'C': [0.01, 1, 100], 'kernel': ['rbf', 'linear']}
     _REGRESSION_ESTIMATORS = {
-        'linearregression': sklearn.linear_model.LinearRegression,
-
+        'linear regression': sklearn.linear_model.LinearRegression,
+        'ridge': sklearn.linear_model.Ridge,
+        'lasso': sklearn.linear_model.Lasso,
     }
     _CLASSIFICATION_ESTIMATORS = {
         'svc': sklearn.svm.SVC,
         'knn': sklearn.neighbors.KNeighborsClassifier,
-        'randomforest': sklearn.ensemble.RandomForestClassifier
+        'random forest': sklearn.ensemble.RandomForestClassifier,
+        'logistic regression': sklearn.linear_model.LogisticRegression,
     }
 
     def __init__(self, name, parameters=None, hyperparameters=None, generate=None):
@@ -68,6 +70,7 @@ class ConfigManager(object):
         self.estimators = []
         self.regression_estimators = {'linearregression', }
         self.classification_estimators = {'svc', 'ridge', 'knn'}
+        self.test_percentage = None
 
     def load_yaml(self, yaml_file):
         if os.path.exists(yaml_file):
@@ -92,7 +95,7 @@ class ConfigManager(object):
         logging.debug("Estimator config is %s", estimators_cfg)
         types = set()
         for est_cfg in estimators_cfg:
-            est = EstimatorWrapper(est_cfg['type'], est_cfg.get('parameters'), est_cfg.get('hyperparameters'), est_cfg.get('generate'))
+            est = EstimatorWrapper(est_cfg['estimator'], est_cfg.get('parameters'), est_cfg.get('hyperparameters'), est_cfg.get('generate'))
             types.add(est._type)
             self.estimators.append(est)
         if len(types) != 1:
@@ -109,6 +112,7 @@ class ConfigManager(object):
         self.impute = pre_cfg.get('impute')
         self.rescale = pre_cfg.get('rescale')
         self.vectorize = pre_cfg.get('vectorize')
+        self.test_percentage = pre_cfg.get('split', 10)
         if self.target_name is None:
             logging.error("target should be specified")
         elif self.feature_names is not None and self.target_name in self.feature_names:

@@ -1,5 +1,6 @@
 estimators:
-  - type: svc
+  - estimator: logistic regression
+  - estimator: svc
     parameters:
       degree: 4
       random_state: 7
@@ -12,7 +13,7 @@ estimators:
         - rbf
         - linear
     generate: all
-  - type: knn
+  - estimator: knn
     hyperparameters:
       n_neighbors:
         - 2
@@ -20,7 +21,7 @@ estimators:
         - 4
         - 5
         - 6
-  - type: randomforest
+  - estimator: random forest
     parameters:
       n_estimators: 10
     hyperparameters:
@@ -44,3 +45,4 @@ pre:
     - 'sepal width (cm)': normalize
   impute:
     - 'petal length (cm)': mean
+  split: 15 # %15 percent of the data will be used for testing.

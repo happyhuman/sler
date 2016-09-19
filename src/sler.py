@@ -7,13 +7,14 @@ import sklearn.cross_validation
 import sklearn.metrics
 import argparse
 import sklearn.preprocessing
+import warnings
 
 
 class ScikitLearnEasyRunner(object):
-    def __init__(self, _input, config_file, test_percentage=10):
+    def __init__(self, _input, config_file):
+        warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
         self.cfgm = ConfigManager()
         self.cfgm.load_yaml(config_file)
-        self.test_percentage = test_percentage
         self.dataframe = None
         self.train_features = None
         self.train_target = None
@@ -74,7 +75,7 @@ class ScikitLearnEasyRunner(object):
         else:
             features = self.dataframe[self.cfgm.feature_names].copy()
         features = pd.get_dummies(features)
-        splits = sklearn.cross_validation.train_test_split(features, target, test_size=self.test_percentage/100.0)
+        splits = sklearn.cross_validation.train_test_split(features, target, test_size=self.cfgm.test_percentage/100.0)
         self.train_features, self.test_features, self.train_target, self.test_target = splits
 
     def _fillna(self, feature, value):
@@ -102,15 +103,24 @@ class ScikitLearnEasyRunner(object):
             self.pred_df['ensemble'] = self.pred_df.mode(axis=1)
         self.pred_df['actual'] = self.test_target.values
 
+    def _get_score(self, actual, prediction):
+        if self.cfgm.estimator_type == 'classification':
+            score = sklearn.metrics.accuracy_score(actual, prediction)
+        else:
+            score = sklearn.metrics.r2_score(actual, prediction)
+        return score
+
     def report(self):
         for name in self.estimators:
-            score = sklearn.metrics.accuracy_score(self.test_target, self.pred_df[name])
+            score = self._get_score(self.test_target, self.pred_df[name])
             print "Accuracy Score for %s: %f"%(name, score)
             if hasattr(self.estimators[name], 'best_params_'):
                 print "Best hyper parameters for %s: %s"%(name, self.estimators[name].best_params_)
             print
-        score = sklearn.metrics.accuracy_score(self.test_target, self.pred_df['ensemble'])
+        score = self._get_score(self.test_target, self.pred_df['ensemble'])
         print "Accuracy Score for ensemble: %f" % (score, )
+        print
+        print self.pred_df.head(10)
         print
 
     def run(self):
@@ -118,19 +128,26 @@ class ScikitLearnEasyRunner(object):
         self.fit()
         self.predict()
         self.report()
-        print self.pred_df.head(10)
+
+
+def run_sler(_input, _config):
+    """
+    The function that runs sler engine, and prints a report
+    :param _input: the input, which can be the path to a csv or xlsx file, a pandas DataFrame, or a scikit-learn Bunch
+    :param _config: the yaml config file
+    :return: the sler engine, for possible further processing
+    """
+    sler = ScikitLearnEasyRunner(_input, _config)
+    sler.run()
+    return sler
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("input_file", help='input file, either a csv or an xlsx file')
     parser.add_argument("config_file", help='config file, given as a yaml')
-    parser.add_argument("--testpercentage", help='percentage of rows used for testing. default is 10', type=int)
 
     args = parser.parse_args()
-    output_file = args.output
-    test_percentage = 10 if args.testpercentage is None else args.testpercentage
-    sler = ScikitLearnEasyRunner(args.input_file, args.config_file, test_percentage)
-    sler.run()
+    run_sler(args.input_file, args.config_file)
 
 
