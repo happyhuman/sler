@@ -4,16 +4,21 @@ import logging
 
 class ConfigManager(object):
     def __init__(self):
-        self.hp = {}
-        self.hp['svm.default'] = {'C': [0.01, 1, 100], 'kernel': ['rbf', 'linear']}
+        self.default_hp = {}
+        self.default_hp['svc.default'] = {'C': [0.01, 1, 100], 'kernel': ['rbf', 'linear']}
         self.input_file = None
+        self.prediction_file = None
+        self.report_file = None
         self.pre = None
         self.feature_names = None
         self.response_name = None
         self.estimator_type = None
+        self.standardize = None
+        self.vectorize = None
         self.estimators = []
-        self.regresison_estimators = {'linearregression', }
-        self.classification_estimators = {'svm', 'ridge', 'knn'}
+        self.test_percentage = None
+        self.regression_estimators = {'linearregression', }
+        self.classification_estimators = {'svc', 'ridge', 'knn'}
         self.clustering_estimators = {'kmeans'}
 
     def load_yaml(self, yaml_file):
@@ -30,41 +35,47 @@ class ConfigManager(object):
         else:
             logging.error("The configuration should specify the input")
             return
-        if 'estimator' in cfg:
-            if 'hyperparameters' in cfg:
-                self._process_hp_configuration(cfg['hyperparameters'])
-            self._process_estimator_configuration(cfg['estimator'])
+        if 'output' in cfg:
+            self._process_output_configuration(cfg['output'])
         else:
-            logging.error("The configuration should specify the estimator")
+            logging.error("The configuration should specify the output")
+            return
+        if 'estimators' in cfg:
+            self._process_estimators_configuration(cfg['estimators'])
+        else:
+            logging.error("The configuration should specify at least one estimator")
 
-    def _process_estimator_configuration(self, estimator_cfg):
-        logging.debug("Estimator config is %s", estimator_cfg)
-        _type = estimator_cfg['type']
-        if _type in self.regresison_estimators:
-            self.estimator_type = 'regression'
-        elif _type in self.classification_estimators:
-            self.estimator_type = 'classification'
-        elif _type in self.clustering_estimators:
-            self.estimator_type = 'clustering'
-        if self.estimator_type is None:
-            logging.error("Unknown Estimator: '%s'", _type)
-            return False
-        if self.estimator_type in {'regression', 'classification'}:
-            if self.response_name is None:
-                logging.error("Response column is not specified")
+    def _process_estimators_configuration(self, estimators_cfg):
+        logging.debug("Estimator config is %s", estimators_cfg)
+        for estimator_cfg in estimators_cfg:
+            _type = estimator_cfg['type']
+            if _type in self.regression_estimators:
+                self.estimator_type = 'regression'
+            elif _type in self.classification_estimators:
+                self.estimator_type = 'classification'
+            elif _type in self.clustering_estimators:
+                self.estimator_type = 'clustering'
+            if self.estimator_type is None:
+                logging.error("Unknown Estimator: '%s'", _type)
                 return False
-        else:
-            if self.response_name is not None:
-                logging.warn("Response is not required for clustering. Ignoring it.")
-        if 'hyperparameter' in estimator_cfg and (estimator_cfg['hyperparameter'] not in self.hp):
-            default_hyperparameter = "%s.default"%_type
-            if default_hyperparameter in self.hp:
-                logging.warn("Hyperparameter '%s' is undefined. Using '%s.default' instead.", estimator_cfg['hyperparameter'], default_hyperparameter)
-                estimator_cfg['hyperparameter'] = self.hp[default_hyperparameter]
+            if self.estimator_type in {'regression', 'classification'}:
+                if self.response_name is None:
+                    logging.error("Response column is not specified")
+                    return False
             else:
-                logging.error("Hyperparameter '%s' is undefined.", estimator_cfg['hyperparameter'])
-                return False
-        self.estimators.append(estimator_cfg)
+                if self.response_name is not None:
+                    logging.warn("Response is not required for clustering. Ignoring it.")
+            self.estimators.append(estimator_cfg)
+        return True
+
+    def _process_output_configuration(self, output_cfg):
+        if 'predictions' in output_cfg:
+            self.prediction_file = output_cfg['predictions']
+        else:
+            logging.error("No file is specified to write the predictions output.")
+            return False
+        if 'report' in output_cfg:
+            self.report_file = output_cfg['report']
         return True
 
     def _process_input_configuration(self, input_cfg):
@@ -84,9 +95,13 @@ class ConfigManager(object):
                 for key, value in self.pre['impute'].iteritems():
                     if value not in {'mode', 'median', 'mean'}:
                         logging.warn("Impute value should be one of mode, median, mean. Unknown value: '%s'.", value)
+        if 'standardize' in input_cfg:
+            self.standardize = input_cfg['standardize']
+        if 'vectorize' in input_cfg:
+            self.vectorize = input_cfg['vectorize']
+        if 'testpercentage' in input_cfg:
+            self.test_percentage = input_cfg['testpercentage']
+            if self.test_percentage < 1 or self.test_percentage > 99:
+                logging.warn("testpercentage should be between 0 and 100. Setting it to 10")
+                self.test_percentage = 10
         return True
-
-    def _process_hp_configuration(self, hp_cfg):
-        logging.debug("Hyperparameter config is %s", hp_cfg)
-        self.hp[hp_cfg['name']] = hp_cfg['values']
-

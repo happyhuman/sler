@@ -7,16 +7,20 @@ import sklearn
 import sklearn.linear_model
 import sklearn.grid_search
 import sklearn.neighbors
+import sklearn.cross_validation
+import sklearn.metrics.accuracy_score
 
 
 class ScikitLearnEasyRunner(object):
     def __init__(self, config_manager):
         self.cfgm = config_manager
         self.dataframe = None
-        self.features = None
-        self.response = None
+        self.train_features = None
+        self.train_response = None
+        self.test_features = None
+        self.test_response = None
+        self.pred_df = None
         self.estimators = {}
-
 
     def _pre_process(self):
         if os.path.exists(self.cfgm.input_file):
@@ -38,14 +42,20 @@ class ScikitLearnEasyRunner(object):
         return True
 
     def _prep_features_response(self):
+        if self.cfgm.response_name is not None:
+            response = self.dataframe[self.cfgm.response_name].copy()
         if self.cfgm.feature_names is None:
-            self.features = self.dataframe.copy()
-            if self.cfgm.response_name is not None:
-                del self.features[self.cfgm.response_name]
+            features = self.dataframe.copy()
+            del features[self.cfgm.response_name]
         else:
-            self.features = self.dataframe[self.cfgm.feature_names].copy()
-        self.features = pd.get_dummies(self.features)
-        self.response = self.dataframe[self.cfgm.response_name].copy()
+            features = self.dataframe[self.cfgm.feature_names].copy()
+
+        features = pd.get_dummies(features)
+
+        self.train_features, self.test_features, self.train_response, self.test_response = \
+            sklearn.cross_validation.train_test_split(features, response, test_size=self.cfgm/100.0)
+        self.train_features = pd.get_dummies(self.train_features)
+        self.train_response = self.dataframe[self.cfgm.response_name].copy()
 
     def _fillna(self, column, value):
         if value == 'mean':
@@ -63,7 +73,11 @@ class ScikitLearnEasyRunner(object):
             init_params = est['init'] if 'init' in est else {}
             estimator = self._get_estimator(_type, init_params)
             gen = est['generate']
-            param_grid = self.cfgm.hp[est['hyperparameter']]
+            param_grid = {}
+            if 'hyperparameter' in est:
+                param_grid = est['hyperparameter']
+            elif "%s.default"%_type in self.cfgm.hp:
+                param_grid = self.cfgm.hp["%s.default"%_type]
             if gen == 'all':
                 searchCV = sklearn.grid_search.GridSearchCV(estimator, param_grid, n_jobs=2)
             elif gen.startswith('random'):
@@ -84,13 +98,36 @@ class ScikitLearnEasyRunner(object):
         return estimator
 
     def fit(self):
-        pass
+        for est in self.estimators.values():
+            est.fit(self.train_features, self.train_response)
+
+    def predict(self):
+        self.pred_df = pd.DataFrame()
+        for _type, est in self.estimators.iteritems():
+            self.pred_df[_type] = est
+        if self.cfgm.estimator_type == 'regression':
+            self.pred_df['ensemble'] = self.pred_df.mean(axis=1)
+        elif self.cfgm.estimator_type == 'classification':
+            self.pred_df['ensemble'] = self.pred_df.mean(axis=1)
+        self.pred_df['actual'] = self.test_response
+
+    def write(self):
+        print "Writing predictions to %s...."%self.cfgm.prediction_file
+        self.pred_df.to_csv(self.cfgm.prediction_file)
+        print "Writing report to %s...." % self.cfgm.report_file
+        rep_file = file(self.cfgm.report_file, 'wt')
+        for _type in self.estimators:
+            score = sklearn.metrics.accuracy_score(self.pred_df['actual'], self.pred_df[_type])
+            rep_file.write("Accuracy Score for %s: %f\n"%(_type, score))
+        rep_file.close()
+        print "Finished."
 
     def run(self):
         if self._pre_process():
             self._create_estimators()
-            if len(self.estimators) > 1:
-                self.dataframe = pd.get_dummies(self.dataframe)
+            self.fit()
+            self.predict()
+            self.write()
 
 
 if __name__ == '__main__':

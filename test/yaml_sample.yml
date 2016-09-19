@@ -1,27 +1,32 @@
-estimator:
-  type: svm
-  #init:
-  hyperparameter: hp.svc.cool
-  generate: all # random:10
-
-hyperparameters:
-  name: hp.svc.cool
-  values:
-    C:
-      - 1
-      - 0.2
-      - 0.003
-    kernel:
-      - rbf
-      - linear
+estimators:
+  - type: svc
+    init:
+      degree: 4
+    hyperparameters:
+      C:
+        - 1
+        - 0.2
+        - 0.003
+      kernel:
+        - rbf
+        - linear
+    generate: all # random:10
 
 input:
   filename: 'sample.csv' # a csv or an excel file
+  testpercentage: 20
   features:
     - age
     - smoker
     - gender
   response: cancer
   pre:
+    standardize:
+      - age
+    #vectorize:
     impute:
       age: 'mean' # or 'mode', 'median'
+
+output:
+  predictions: 'pred.csv'
+  report: 'report.txt'
