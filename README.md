@@ -15,7 +15,7 @@ Using sler, you can perform most or all of the steps above through configuration
 You can also define which features need be rescaled or imputed and how.
 
 # Requirements
-sler relies on the following libraries, which should be straight forward to install:
+sler depends on the following libraries, which should be straight forward to install:
 - pyyaml
 - numpy
 - pandas
@@ -83,31 +83,38 @@ pre:
 By running the code above, you will get:
 
 ```
-Accuracy Score for knn: 1.000000
+Preprocessing...
+Training the estimators...
+	training knn...
+	training svc...
+	training logistic regression...
+	training random forest...
+Creating predictions...
+Accuracy Score for knn: 0.956522
 Best hyper parameters for knn: {'n_neighbors': 3}
 
-Accuracy Score for svc: 1.000000
-Best hyper parameters for svc: {'kernel': 'rbf', 'C': 1}
+Accuracy Score for svc: 0.956522
+Best hyper parameters for svc: {'kernel': 'linear', 'C': 1}
 
-Accuracy Score for logistic regression: 0.913043
+Accuracy Score for logistic regression: 0.869565
 Best hyper parameters for logistic regression: {}
 
-Accuracy Score for random forest: 0.956522
-Best hyper parameters for random forest: {'max_depth': 5}
+Accuracy Score for random forest: 0.913043
+Best hyper parameters for random forest: {'max_depth': 7}
 
-Accuracy Score for ensemble: 1.000000
+Accuracy Score for ensemble: 0.913043
 
    knn  svc  logistic regression  random forest  ensemble  actual
 0    0    0                    0              0         0       0
-1    0    0                    0              0         0       0
-2    1    1                    1              1         1       1
-3    1    1                    1              1         1       1
-4    2    2                    2              1         2       2
-5    2    2                    2              2         2       2
-6    1    1                    1              1         1       1
-7    0    0                    0              0         0       0
-8    0    0                    0              0         0       0
-9    0    0                    0              0         0       0
+1    1    1                    1              1         1       1
+2    0    0                    0              0         0       0
+3    0    0                    0              0         0       0
+4    1    1                    1              1         1       1
+5    0    0                    0              0         0       0
+6    1    1                    2              1         1       1
+7    1    1                    1              1         1       1
+8    2    2                    2              2         2       2
+9    2    2                    2              2         2       2
 ```
 
 Further examples can be found in the test directory.
