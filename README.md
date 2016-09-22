@@ -11,15 +11,15 @@ There is usually a number of steps required to find the best estimator:
 - evaluate the estimators by comparing their predictions against the test dataset
 - choosing the best estimator using some scoring method
 
-Using sler, you can perform most or all of the steps above through configuration, using a simple yaml file. You can define a number of estimators, along with the parameters and hyperparameters, and let sler do all the work for you.
+Using sler, you can perform most or all of the steps above through configuration, using a simple json or yaml file. You can define a number of estimators, along with the parameters and hyper-parameters, and let sler do all the work for you.
 You can also define which features need be rescaled or imputed and how.
 
 # Requirements
 sler depends on the following libraries, which should be straight forward to install:
-- pyyaml
 - numpy
 - pandas
 - scikit-learn
+- pyyaml (optional, only needed if the config file is a yaml file)
 
 # Example 
 In order to run sler on the iris data (provided in scikit-learn), you can simply run:

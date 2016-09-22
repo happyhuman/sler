@@ -73,6 +73,14 @@ class ConfigManager(object):
         self.classification_estimators = {'svc', 'ridge', 'knn'}
         self.test_percentage = None
 
+    def load_json(self, json_file):
+        if os.path.exists(json_file):
+            import json
+            cfg_values = json.load(file(json_file, 'r'))
+            self._process_config_values(cfg_values)
+        else:
+            logging.error("%s does not exist.", json_file)
+
     def load_yaml(self, yaml_file):
         if os.path.exists(yaml_file):
             import yaml

@@ -41,8 +41,8 @@ pre:
     - 'petal width (cm)'
   target: target
   rescale:
-    - 'sepal length (cm)': standardize
-    - 'sepal width (cm)': normalize
+    'sepal length (cm)': standardize
+    'sepal width (cm)': normalize
   impute:
-    - 'petal length (cm)': mean
+    'petal length (cm)': mean
   split: 15 # %15 percent of the data will be used for testing.

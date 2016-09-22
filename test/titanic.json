@@ -1,0 +1,19 @@
+{
+  "estimators": [
+    { "estimator": "logistic regression"},
+    { "estimator": "knn",
+      "hyper parameters":
+        {"n_neighbors": [2, 3, 4, 5, 6, 7, 8]},
+      "generate": "all"
+    }
+  ],
+
+  "pre": {
+    "target": "Survived",
+    "features": ["Age", "Pclass", "Sex", "Fare"],
+    "rescale": {"Fare": "normalize"},
+    "impute": {"Age": "mean"},
+    "split": 20
+  }
+}
+

@@ -32,7 +32,7 @@ pre:
     - Sex
     - Fare
   rescale:
-    - Fare: normalize
+    Fare: normalize
   impute:
-    - Age: mean
+    Age: mean
   split: 20

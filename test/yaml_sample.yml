@@ -19,7 +19,7 @@ pre:
     - gender
   target: cancer
   rescale:
-    - age: standardize
+    age: standardize
   #poly:
   #  degree: 2
   #  features:
@@ -27,5 +27,5 @@ pre:
   #    - age
   #vectorize:
   impute:
-    - age: mean # or mode, median
+    age: mean # or mode, median
   split: 10

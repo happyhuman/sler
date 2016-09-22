@@ -23,8 +23,8 @@ class TestSler(TestCase):
 
         self.assertEqual({'age', 'smoker', 'gender'}, set(cm.feature_names))
         self.assertEqual('cancer', cm.target_name)
-        self.assertEqual([{'age': 'standardize'}], cm.rescale)
-        self.assertEqual([{'age': 'mean'}], cm.impute)
+        self.assertEqual({'age': 'standardize'}, cm.rescale)
+        self.assertEqual({'age': 'mean'}, cm.impute)
 
     def test_sler_classification(self):
         iris = datasets.load_iris()
@@ -34,7 +34,11 @@ class TestSler(TestCase):
         boston = datasets.load_boston()
         run_sler(boston, 'boston.yml')
 
-    def test_titanic(self):
+    def test_titanic_yaml(self):
         titanic_dataframe = pd.read_csv('titanic.csv')
         run_sler(titanic_dataframe, 'titanic.yml')
+
+    def test_titanic_json(self):
+        titanic_dataframe = pd.read_csv('titanic.csv')
+        run_sler(titanic_dataframe, 'titanic.json')
 

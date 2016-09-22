@@ -14,7 +14,10 @@ class ScikitLearnEasyRunner(object):
     def __init__(self, _input, config_file):
         warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
         self.cfgm = ConfigManager()
-        self.cfgm.load_yaml(config_file)
+        if config_file.endswith('.json'):
+            self.cfgm.load_json(config_file)
+        else:
+            self.cfgm.load_yaml(config_file)
         self.dataframe = None
         self.train_features = None
         self.train_target = None
@@ -32,9 +35,7 @@ class ScikitLearnEasyRunner(object):
 
     def _rescale(self):
         if self.cfgm.rescale is not None:
-            for item in self.cfgm.rescale:
-                feature = item.keys()[0]
-                value = item[feature]
+            for feature, value in self.cfgm.rescale.iteritems():
                 if value == 'standardize':
                     self.dataframe[feature] = sklearn.preprocessing.StandardScaler().fit_transform(self.dataframe[feature].reshape(-1, 1))
                 elif value in {'normalize', 'minmax'}:
@@ -42,9 +43,7 @@ class ScikitLearnEasyRunner(object):
 
     def _impute(self):
         if self.cfgm.impute is not None:
-            for item in self.cfgm.impute:
-                feature = item.keys()[0]
-                value = item[feature]
+            for feature, value in self.cfgm.impute.iteritems():
                 self._fillna(feature, value)
 
     def _load_input(self, _input):
