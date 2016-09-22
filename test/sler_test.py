@@ -2,6 +2,7 @@ from unittest import TestCase
 from config import ConfigManager
 from sler import run_sler
 from sklearn import datasets
+import pandas as pd
 
 
 class TestSler(TestCase):
@@ -32,4 +33,8 @@ class TestSler(TestCase):
     def test_sler_regression(self):
         boston = datasets.load_boston()
         run_sler(boston, 'boston.yml')
+
+    def test_titanic(self):
+        titanic_dataframe = pd.read_csv('titanic.csv')
+        run_sler(titanic_dataframe, 'titanic.yml')
 

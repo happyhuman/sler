@@ -15,6 +15,7 @@ class EstimatorWrapper(object):
         'linear regression': sklearn.linear_model.LinearRegression,
         'ridge': sklearn.linear_model.Ridge,
         'lasso': sklearn.linear_model.Lasso,
+        'svr': sklearn.svm.SVR,
     }
     _CLASSIFICATION_ESTIMATORS = {
         'svc': sklearn.svm.SVC,
@@ -48,7 +49,7 @@ class EstimatorWrapper(object):
         if self.generate == 'all':
             estimator = sklearn.grid_search.GridSearchCV(self.estimator, self.hyperparameters, n_jobs=2)
         elif self.generate.startswith('random'):
-            n_iter = int(self.generate[len('random:'):]) if self.generate.startswith('random:') else 10
+            n_iter = int(self.generate[len('random:'):]) if self.generate.startswith('random:') else 5
             estimator = sklearn.grid_search.RandomizedSearchCV(self.estimator, self.hyperparameters, n_iter, n_jobs=2)
         else:
             logging.error("Unknown generate parameter: %s. Ignoring hyperparameters", self.generate)

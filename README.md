@@ -29,7 +29,7 @@ estimators:
     parameters:
       degree: 4
       random_state: 7
-    hyperparameters:
+    hyper parameters:
       C:
         - 1
         - 0.2
@@ -39,7 +39,7 @@ estimators:
         - linear
     generate: all
   - estimator: knn
-    hyperparameters:
+    hyper parameters:
       n_neighbors:
         - 2
         - 3
@@ -49,7 +49,7 @@ estimators:
   - estimator: random forest
     parameters:
       n_estimators: 10
-    hyperparameters:
+    hyper parameters:
       max_depth:
         - 3
         - 4

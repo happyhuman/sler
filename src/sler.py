@@ -91,16 +91,18 @@ class ScikitLearnEasyRunner(object):
     def fit(self):
         for name, est in self.estimators.iteritems():
             logging.debug("Training estimator: %s", name)
+            print "\ttraining %s..."%name
             est.fit(self.train_features, self.train_target)
 
     def predict(self):
         self.pred_df = pd.DataFrame()
         for _type, est in self.estimators.iteritems():
             self.pred_df[_type] = est.predict(self.test_features)
-        if self.cfgm.estimator_type == 'regression':
-            self.pred_df['ensemble'] = self.pred_df.mean(axis=1)
-        elif self.cfgm.estimator_type == 'classification':
-            self.pred_df['ensemble'] = self.pred_df.mode(axis=1)
+        if len(self.estimators) > 2:
+            if self.cfgm.estimator_type == 'regression':
+                self.pred_df['ensemble'] = self.pred_df.mean(axis=1)
+            elif self.cfgm.estimator_type == 'classification':
+                self.pred_df['ensemble'] = self.pred_df.mode(axis=1)
         self.pred_df['actual'] = self.test_target.values
 
     def _get_score(self, actual, prediction):
@@ -117,15 +119,19 @@ class ScikitLearnEasyRunner(object):
             if hasattr(self.estimators[name], 'best_params_'):
                 print "Best hyper parameters for %s: %s"%(name, self.estimators[name].best_params_)
             print
-        score = self._get_score(self.test_target, self.pred_df['ensemble'])
-        print "Accuracy Score for ensemble: %f" % (score, )
-        print
+        if 'ensemble' in self.pred_df:
+            score = self._get_score(self.test_target, self.pred_df['ensemble'])
+            print "Accuracy Score for ensemble: %f" % (score, )
+            print
         print self.pred_df.head(10)
         print
 
     def run(self):
+        print "Preprocessing..."
         self._pre_process()
+        print "Training the estimators..."
         self.fit()
+        print "Creating predictions..."
         self.predict()
         self.report()
 
