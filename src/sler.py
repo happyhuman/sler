@@ -16,8 +16,10 @@ class ScikitLearnEasyRunner(object):
         self.cfgm = ConfigManager()
         if config_file.endswith('.json'):
             self.cfgm.load_json(config_file)
-        else:
+        elif config_file.endswith('.yml') or config_file.endswith('.yaml'):
             self.cfgm.load_yaml(config_file)
+        else:
+            logging.error("Unknown config extension: %s. Expecting a file with json, yml, or yaml extension", config_file)
         self.dataframe = None
         self.train_features = None
         self.train_target = None
