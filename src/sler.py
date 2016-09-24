@@ -78,8 +78,6 @@ class SlerConfigManager(object):
         self.vectorize = None
         self.impute = None
         self.estimators = []
-        self.regression_estimators = {'linearregression', }
-        self.classification_estimators = {'svc', 'ridge', 'knn'}
         self.test_percentage = 10
 
     def load_json(self, json_file):

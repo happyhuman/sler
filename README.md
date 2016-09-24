@@ -23,14 +23,14 @@ sler depends on the following libraries, which should be straight forward to ins
 
 # Examples
 sler is designed to be easy to configure and run. There are several simple examples in the example directory to illustrate the basics of sler.
-There are three ways to configure sler, using a yaml file, using a json file, or using the python API. The following simple example shows how to use sler directly using python:
+There are three ways to configure sler: using a yaml file, using a json file, or using the python API. The following simple example shows how to use sler directly using python:
 
 ```python
 from sler import ScikitLearnEasyRunner
 sler = ScikitLearnEasyRunner('titanic.csv')
-sler.config.add_estimator('logistic regression')
+sler.config.add_estimator('logistic regression', {'random_state': 1}, {'penalty': ('l1', 'l2'), 'C': (0.1, 1, 10)})
 sler.config.set_target_name('Survived')
-sler.config.set_imputations({'Age': 'normalize'})
+sler.config.set_imputations({'Age': 'mean'})
 sler.run()
 ```
 
@@ -40,18 +40,18 @@ Preprocessing...
 Training the estimators...
 	training logistic regression...
 Creating predictions...
-Accuracy Score for logistic regression: 0.777778
-Best hyper parameters for logistic regression: {}
+Accuracy Score for logistic regression: 0.722222
+Best hyper parameters for logistic regression: {'penalty': 'l2', 'C': 10}
 
    logistic regression  actual
 0                    0       0
-1                    0       1
+1                    0       0
 2                    0       0
 3                    0       0
-4                    0       0
-5                    0       0
+4                    1       0
+5                    0       1
 6                    0       0
 7                    0       0
 8                    0       0
-9                    1       1
+9                    0       1
 ```
