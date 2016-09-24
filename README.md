@@ -28,7 +28,9 @@ There are three ways to configure sler: using a yaml file, using a json file, or
 ```python
 from sler import ScikitLearnEasyRunner
 sler = ScikitLearnEasyRunner('titanic.csv')
-sler.config.add_estimator('logistic regression', {'random_state': 1}, {'penalty': ('l1', 'l2'), 'C': (0.1, 1, 10)})
+params = {'random_state': 1}
+hyperparams = {'penalty': ('l1', 'l2'), 'C': (0.1, 1, 10)}
+sler.config.add_estimator('logistic regression', params, hyperparams) 
 sler.config.set_target_name('Survived')
 sler.config.set_imputations({'Age': 'mean'})
 sler.run()
