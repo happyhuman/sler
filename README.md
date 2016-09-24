@@ -21,100 +21,37 @@ sler depends on the following libraries, which should be straight forward to ins
 - scikit-learn
 - pyyaml (optional, only needed if the config file is a yaml file)
 
-# Example 
-In order to run sler on the iris data (provided in scikit-learn), you can simply run:
+# Examples
+sler is designed to be easy to configure and run. There are several simple examples in the example directory to illustrate the basics of sler.
+There are three ways to configure sler, using a yaml file, using a json file, or using the python API. The following simple example shows how to use sler directly using python:
+
 ```python
-iris = datasets.load_iris()
-run_sler(iris, 'iris.yml')
+from sler import ScikitLearnEasyRunner
+sler = ScikitLearnEasyRunner('titanic.csv')
+sler.config.add_estimator('logistic regression')
+sler.config.set_target_name('Survived')
+sler.config.set_imputations({'Age': 'normalize'})
+sler.run()
 ```
 
-iris.yml is defined by:
-```yaml
-estimators:
-  - estimator: logistic regression
-  - estimator: svc
-    parameters:
-      degree: 4
-      random_state: 7
-    hyper parameters:
-      C:
-        - 1
-        - 0.2
-        - 0.003
-      kernel:
-        - rbf
-        - linear
-    generate: all
-  - estimator: knn
-    hyper parameters:
-      n_neighbors:
-        - 2
-        - 3
-        - 4
-        - 5
-        - 6
-  - estimator: random forest
-    parameters:
-      n_estimators: 10
-    hyper parameters:
-      max_depth:
-        - 3
-        - 4
-        - 5
-        - 6
-        - 7
-    generate: random:3
-
-pre:
-  features:
-    - 'sepal length (cm)'
-    - 'sepal width (cm)'
-    - 'petal length (cm)'
-    - 'petal width (cm)'
-  target: target
-  rescale:
-    - 'sepal length (cm)': standardize
-    - 'sepal width (cm)': normalize
-  impute:
-    - 'petal length (cm)': mean
-  split: 15 # %15 percent of the data will be used for testing.
-```
-
-By running the code above, you will get:
-
+The following is the output of the example above:
 ```
 Preprocessing...
 Training the estimators...
-	training knn...
-	training svc...
 	training logistic regression...
-	training random forest...
 Creating predictions...
-Accuracy Score for knn: 0.956522
-Best hyper parameters for knn: {'n_neighbors': 3}
-
-Accuracy Score for svc: 0.956522
-Best hyper parameters for svc: {'kernel': 'linear', 'C': 1}
-
-Accuracy Score for logistic regression: 0.869565
+Accuracy Score for logistic regression: 0.777778
 Best hyper parameters for logistic regression: {}
 
-Accuracy Score for random forest: 0.913043
-Best hyper parameters for random forest: {'max_depth': 7}
-
-Accuracy Score for ensemble: 0.913043
-
-   knn  svc  logistic regression  random forest  ensemble  actual
-0    0    0                    0              0         0       0
-1    1    1                    1              1         1       1
-2    0    0                    0              0         0       0
-3    0    0                    0              0         0       0
-4    1    1                    1              1         1       1
-5    0    0                    0              0         0       0
-6    1    1                    2              1         1       1
-7    1    1                    1              1         1       1
-8    2    2                    2              2         2       2
-9    2    2                    2              2         2       2
+   logistic regression  actual
+0                    0       0
+1                    0       1
+2                    0       0
+3                    0       0
+4                    0       0
+5                    0       0
+6                    0       0
+7                    0       0
+8                    0       0
+9                    1       1
 ```
-
-Further examples can be found in the test directory.

@@ -1,8 +1,5 @@
 from unittest import TestCase
-from config import ConfigManager
-from sler import run_sler
-from sklearn import datasets
-import pandas as pd
+from sler import SlerConfigManager
 
 
 class TestSler(TestCase):
@@ -10,7 +7,7 @@ class TestSler(TestCase):
         pass
 
     def test_load_yaml(self):
-        cm = ConfigManager()
+        cm = SlerConfigManager()
         self.assertEqual(0, len(cm.estimators))
         cm.load_yaml('./yaml_sample.yml')
         self.assertEqual(1, len(cm.estimators))
@@ -25,20 +22,3 @@ class TestSler(TestCase):
         self.assertEqual('cancer', cm.target_name)
         self.assertEqual({'age': 'standardize'}, cm.rescale)
         self.assertEqual({'age': 'mean'}, cm.impute)
-
-    def test_sler_classification(self):
-        iris = datasets.load_iris()
-        run_sler(iris, 'iris.yml')
-
-    def test_sler_regression(self):
-        boston = datasets.load_boston()
-        run_sler(boston, 'boston.yml')
-
-    def test_titanic_yaml(self):
-        titanic_dataframe = pd.read_csv('titanic.csv')
-        run_sler(titanic_dataframe, 'titanic.yml')
-
-    def test_titanic_json(self):
-        titanic_dataframe = pd.read_csv('titanic.csv')
-        run_sler(titanic_dataframe, 'titanic.json')
-
