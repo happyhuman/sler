@@ -291,7 +291,6 @@ class ScikitLearnEasyRunner(object):
     def reset(self):
         self.dataframe = self.original_dataframe.copy()
 
-
     def fit(self):
         for name, est in self.estimators.iteritems():
             logging.debug("Training estimator: %s", name)
@@ -315,6 +314,11 @@ class ScikitLearnEasyRunner(object):
         else:
             score = sklearn.metrics.r2_score(actual, prediction)
         return score
+
+    def get_model(self, name):
+        if hasattr(self.estimators[name], 'best_estimator_ '):
+            return self.estimators[name].best_estimator_
+        return self.estimators[name]
 
     def report(self):
         for name in self.estimators:
@@ -355,7 +359,7 @@ def run_sler(_input, _config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("input_file", help='input file, either a csv or an xlsx file')
-    parser.add_argument("config_file", help='config file, given as a yaml')
+    parser.add_argument("config_file", help='config file, given as a yaml or json file')
 
     args = parser.parse_args()
     run_sler(args.input_file, args.config_file)
