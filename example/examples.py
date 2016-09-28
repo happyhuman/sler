@@ -27,9 +27,9 @@ def example_titanic_json(*params):
 
 def example_interactive(*params):
     sler = ScikitLearnEasyRunner('titanic.csv')
-    mparams = {'random_state': 1}
-    mhyperparams = {'penalty': ('l1', 'l2'), 'C': (0.1, 1, 10)}
-    sler.config.add_estimator('logistic regression', mparams, mhyperparams)
+    _params = {'random_state': 1}
+    _hyperparams = {'penalty': ('l1', 'l2'), 'C': (0.1, 1, 10)}
+    sler.config.add_estimator('logistic regression', _params, _hyperparams)
     sler.config.set_target_name('Survived')
     sler.config.set_imputations({'Age': 'normalize'})
     sler.run()

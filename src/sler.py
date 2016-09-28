@@ -106,29 +106,29 @@ class SlerConfigManager(object):
         self.estimators = []
         self.test_percentage = 10
         self.scorer_name = None
-        self.scorer_parameters = None
+        self.scorer_parameters = {}
         self.runnable = None
 
     def load_json(self, json_file):
         if os.path.exists(json_file):
             import json
             cfg_values = json.load(file(json_file, 'r'))
-            return self._process_config_values(cfg_values)
+            self.runnable = self._process_config_values(cfg_values)
         else:
             logging.error("%s does not exist.", json_file)
-        return False
+            self.runnable = False
 
     def load_yaml(self, yaml_file):
         if module_available('yaml'):
             if os.path.exists(yaml_file):
                 import yaml
                 cfg_values = yaml.load(file(yaml_file, 'r'))
-                return self._process_config_values(cfg_values)
+                self.runnable = self._process_config_values(cfg_values)
             else:
                 logging.error("%s does not exist.", yaml_file)
         else:
             print "Please install pyyaml first"
-        return False
+            self.runnable = False
 
     def _assert(self, condition, message, level='error'):
         if not condition:
@@ -307,12 +307,11 @@ class ScikitLearnEasyRunner(object):
         self.pred_df = None
         self.estimators = None
         self.scorer = None
-        self.config_loaded = False
         if config_file is not None:
             if config_file.endswith('.json'):
-                self.config_loaded = self.config.load_json(config_file)
+                self.config.load_json(config_file)
             elif config_file.endswith('.yml') or config_file.endswith('.yaml'):
-                self.config_loaded = self.config.load_yaml(config_file)
+                self.config.load_yaml(config_file)
             else:
                 logging.error("Unknown config extension: %s. Expecting a file with json, yml, or yaml extension", config_file)
 
@@ -403,6 +402,7 @@ class ScikitLearnEasyRunner(object):
 
     def _get_score(self, actual, prediction):
         if self.config.estimator_type == 'classification':
+            self.scorer
             score = self.scorer(actual, prediction, **self.config.scorer_parameters)
         else:
             score = self.scorer(actual, prediction, **self.config.scorer_parameters)
@@ -428,23 +428,20 @@ class ScikitLearnEasyRunner(object):
         print
 
     def run(self):
-        if self.config_loaded:
-            print "Analyzing the configuration..."
-            self.config.analyze()
-            if self.config.runnable:
-                print "Loading the input..."
-                self._load_input(self._input)
-                print "Pre-processing..."
-                self._pre_process()
-                print "Training the estimators..."
-                self.fit()
-                print "Creating predictions..."
-                self.predict()
-                self.report()
-            else:
-                print "Cannot run sler due to configuration error"
+        print "Analyzing the configuration..."
+        self.config.analyze()
+        if self.config.runnable:
+            print "Loading the input..."
+            self._load_input(self._input)
+            print "Pre-processing..."
+            self._pre_process()
+            print "Training the estimators..."
+            self.fit()
+            print "Creating predictions..."
+            self.predict()
+            self.report()
         else:
-            print "Unable to load the config file successfully."
+            print "Cannot run sler due to configuration error"
 
 
 def run_sler(_input, _config):

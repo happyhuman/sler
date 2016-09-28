@@ -20,6 +20,7 @@ sler depends on the following libraries, which should be straight forward to ins
 - pandas
 - scikit-learn
 - pyyaml (optional, only needed if the config file is a yaml file)
+- scipy (optional)
 
 # Usage
 In order to run sler, you need to define at least three elements:
@@ -37,15 +38,16 @@ sler automatically converts the categorical features to boolean features using O
 
 You need to define at least one estimator to be able to run sler. However you may choose to define several estimators. All these estimators should be for either classification or regression. For every estimator, you can optionally define a list of parameters and hyper-parameters. Parameters and hyper-parameters are using to initialize an estimator. The following is an example in yaml:
 ```yaml
-estimators:
-  - estimator: svc
-    parameters:
-      degree: 4
-    hyper parameters:
-      C:
-        - 1
-        - 0.2
-    generate: all
+train:
+    estimators:
+      - estimator: svc
+        parameters:
+          degree: 4
+        hyper parameters:
+          C:
+            - 1
+            - 0.2
+        generate: all
 ```
 
 This tells sler to create, train, and evaluate the following two estimators:
@@ -71,22 +73,24 @@ sler.run()
 
 The following is the output of the example above:
 ```
-Preprocessing...
+Analyzing the configuration...
+Loading the input...
+Pre-processing...
 Training the estimators...
 	training logistic regression...
 Creating predictions...
-Accuracy Score for logistic regression: 0.722222
-Best hyper parameters for logistic regression: {'penalty': 'l2', 'C': 10}
+accuracy score for logistic regression: 0.822222
+	Best hyper parameters for logistic regression: {'penalty': 'l1', 'C': 1}
 
    logistic regression  actual
-0                    0       0
+0                    1       1
 1                    0       0
 2                    0       0
 3                    0       0
-4                    1       0
-5                    0       1
-6                    0       0
-7                    0       0
-8                    0       0
-9                    0       1
+4                    0       1
+5                    0       0
+6                    0       1
+7                    1       0
+8                    1       1
+9                    0       0
 ```
