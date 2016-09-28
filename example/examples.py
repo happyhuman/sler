@@ -3,6 +3,7 @@ from sklearn import datasets
 import pandas as pd
 import sys
 import inspect
+import sklearn.datasets
 
 
 def example_iris(*params):
@@ -39,6 +40,26 @@ def example_interactive(*params):
         best_model = sler.get_model('logistic regression')
         with open(params[0], 'wb') as handle:
             pickle.dump(best_model, handle)
+
+
+def example_classification(*params):
+    """
+    :param params: number_features (default: 2), number_classes (default: 3), number_samples (default: 500)
+    """
+    n_features = int(params[0]) if len(params) > 0 else 2
+    n_classes = int(params[1]) if len(params) > 1 else 3
+    n_samples = int(params[2]) if len(params) > 2 else 500
+    X, y = sklearn.datasets.make_classification(n_features=n_features, n_redundant=0, n_informative=2, \
+                                                n_clusters_per_class=1, n_classes=n_classes, n_samples=n_samples)
+    feature_names = ['feature_%d'%i for i in range(1, n_features+1)]
+    df = pd.DataFrame(X, columns=feature_names)
+    df['target'] = y
+    sler = ScikitLearnEasyRunner(df)
+    _hyperparams = {'n_estimators': (10, 15, 20), 'max_depth': (3, 5, 7, 9), 'min_samples_split': (2, 3, 4, 5, 6, 7)}
+    sler.config.add_estimator('random forest', None, _hyperparams, 'random:10')
+    sler.config.set_target_name('target')
+    sler.config.set_scorer('recall', {'average': 'weighted'})
+    sler.run()
 
 
 if __name__ == '__main__':

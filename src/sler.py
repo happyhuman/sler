@@ -1,9 +1,10 @@
+import imp
 import os.path
-import pandas as pd
-import argparse
-import warnings
 import os.path
 import logging
+import argparse
+import warnings
+import pandas as pd
 import sklearn
 import sklearn.svm
 import sklearn.metrics
@@ -14,8 +15,6 @@ import sklearn.linear_model
 import sklearn.datasets.base
 import sklearn.preprocessing
 import sklearn.cross_validation
-import sklearn.metrics
-import imp
 
 
 def module_available(module_name):
