@@ -131,7 +131,6 @@ class SlerConfigManager(object):
         return False
 
     def _assert(self, condition, message, level='error'):
-        self.runnable = True
         if not condition:
             if level == 'error':
                 logging.error(message)
@@ -140,6 +139,7 @@ class SlerConfigManager(object):
                 logging.warn(message)
 
     def analyze(self):
+        self.runnable = True
         self._assert(self.target_name is not None, "Target name cannot be None")
         self._assert(len(self.estimators) > 0, "At least one estimator needs be defined")
         estimators_types = {self._get_estimator_type(est.name) for est in self.estimators}
