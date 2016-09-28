@@ -1,37 +1,41 @@
-estimators:
-  - estimator: logistic regression
-  - estimator: svc
-    parameters:
-      degree: 4
-      random_state: 7
-    hyper parameters:
-      C:
-        - 1
-        - 0.2
-        - 0.003
-      kernel:
-        - rbf
-        - linear
-    generate: all
-  - estimator: knn
-    hyper parameters:
-      n_neighbors:
-        - 2
-        - 3
-        - 4
-        - 5
-        - 6
-  - estimator: random forest
-    parameters:
-      n_estimators: 10
-    hyper parameters:
-      max_depth:
-        - 3
-        - 4
-        - 5
-        - 6
-        - 7
-    generate: random:3
+train:
+  scoring:
+    method: precision
+    average: weighted
+  estimators:
+    - estimator: logistic regression
+    - estimator: svc
+      parameters:
+        degree: 4
+        random_state: 7
+      hyper parameters:
+        C:
+          - 1
+          - 0.2
+          - 0.003
+        kernel:
+          - rbf
+          - linear
+      generate: all
+    - estimator: knn
+      hyper parameters:
+        n_neighbors:
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+    - estimator: random forest
+      parameters:
+        n_estimators: 10
+      hyper parameters:
+        max_depth:
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+      generate: random:3
 
 pre:
   features:

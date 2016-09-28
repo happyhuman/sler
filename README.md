@@ -26,6 +26,7 @@ In order to run sler, you need to define at least three elements:
 - An input (e.g. a csv file, a scikit-learn Bunch, etc)
 - The target/response column
 - An estimator
+
 However in most cases, this is not going to produce the desired model. There is usually a number of preprocessing steps that are required to prepare the input prior to model training. sler provides the following preprocessing capabilities:
 - Filling the missing values by imputing, using the mean, median, or mode functions.
 - Rescaling the numerical features, using standardization or normalization.
@@ -34,7 +35,7 @@ However in most cases, this is not going to produce the desired model. There is 
 
 sler automatically converts the categorical features to boolean features using One Hot Encoding. Hence, you need not do anything for this step.
 
-You need to define at least one estimator to be able to run sler. However you may choose to define several estimators. All these estimators should be either for classification or regression. For every estimator, you can optionally define a list of parameters and hyper-parameters. Parameters and hyper-parameters are using to initialize an estimator. The following is an example in yaml:
+You need to define at least one estimator to be able to run sler. However you may choose to define several estimators. All these estimators should be for either classification or regression. For every estimator, you can optionally define a list of parameters and hyper-parameters. Parameters and hyper-parameters are using to initialize an estimator. The following is an example in yaml:
 ```yaml
 estimators:
   - estimator: svc
@@ -44,13 +45,14 @@ estimators:
       C:
         - 1
         - 0.2
+    generate: all
 ```
 
-This tells sler to create, train, and evaluate the following two SVC models:
+This tells sler to create, train, and evaluate the following two estimators:
 - SVC(degree = 4, C = 1)
 - SVC(degree = 4, C= 0.2)
 
-sler will then choose the best of these two models. If there are many hyper-parameters, sler will have to create and train many models which can be very time consuming. A practical approach is to tell sler, to create only a subset of such models at random and evaluate those. This can be control using the 'generate' parameter which is set to 'all' by default. You may set 'generate' to 'random:6' instead, to create only 6 models.
+sler will then train both of these estimators and evaluate them against the dataset to choose the best one. If there are many hyper-parameters, sler will have to create and train many estimators, which can be very time consuming. A more practical approach is to tell sler, to create only a subset of thse estimators at random and evaluate those. This can be controlled using the 'generate' parameter which is set to 'all' by default. You may set 'generate' to 'random:6' instead, to create only 6 estimators.
 
 # Examples
 sler is designed to be easy to configure and run. There are several simple examples in the example directory to illustrate the basics of sler.

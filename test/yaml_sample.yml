@@ -1,16 +1,21 @@
-estimators:
-  - estimator: svc
-    parameters:
-      degree: 4
-    hyper parameters:
-      C:
-        - 1
-        - 0.2
-        - 0.003
-      kernel:
-        - rbf
-        - linear
-    generate: all # random:10
+train:
+  scoring:
+    method: precision
+    average: weighted
+  estimators:
+    - estimator: svc
+      parameters:
+        degree: 4
+      hyper parameters:
+        C:
+          - 1
+          - 0.2
+          - 0.003
+        kernel:
+          - rbf
+          - linear
+      generate: all # random:10
+  evaluate:
 
 pre:
   features:
@@ -29,3 +34,4 @@ pre:
   impute:
     age: mean # or mode, median
   split: 10
+

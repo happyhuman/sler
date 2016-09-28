@@ -1,27 +1,28 @@
-estimators:
-  - estimator: logistic regression
-  - estimator: knn
-    hyper parameters:
-      n_neighbors:
-        - 2
-        - 3
-        - 4
-        - 5
-        - 6
-        - 7
-        - 8
-    generate: all
-  - estimator: svc
-    parameters:
-      degree: 4
-    hyper parameters:
-      C:
-        - 1
-        - 0.2
-        - 0.003
-      kernel:
-        - rbf
-        - linear
+train:
+  estimators:
+    - estimator: logistic regression
+    - estimator: knn
+      hyper parameters:
+        n_neighbors:
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 8
+      generate: all
+    - estimator: svc
+      parameters:
+        degree: 4
+      hyper parameters:
+        C:
+          - 1
+          - 0.2
+          - 0.003
+        kernel:
+          - rbf
+          - linear
 
 
 pre:

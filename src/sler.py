@@ -14,6 +14,17 @@ import sklearn.linear_model
 import sklearn.datasets.base
 import sklearn.preprocessing
 import sklearn.cross_validation
+import sklearn.metrics
+import imp
+
+
+def module_available(module_name):
+    try:
+        imp.find_module(module_name)
+        found = True
+    except ImportError:
+        found = False
+    return found
 
 
 class EstimatorWrapper(object):
@@ -68,8 +79,23 @@ class EstimatorWrapper(object):
     def __str__(self):
         return "EstimatorWrapper<%s>"%self.name
 
+    @property
+    def REGRESSION_ESTIMATORS(self):
+        return self._REGRESSION_ESTIMATORS
+
 
 class SlerConfigManager(object):
+    _CLASSIFICATION_SCORERS = {
+        'accuracy': sklearn.metrics.accuracy_score,
+        'precision': sklearn.metrics.precision_score,
+        'recall': sklearn.metrics.recall_score,
+    }
+    _REGRESSION_SCORERS = {
+        'absolute': sklearn.metrics.mean_absolute_error,
+        'squared': sklearn.metrics.mean_squared_error,
+        'r2': sklearn.metrics.r2_score,
+    }
+
     def __init__(self):
         self.feature_names = None
         self.target_name = None
@@ -79,33 +105,94 @@ class SlerConfigManager(object):
         self.impute = None
         self.estimators = []
         self.test_percentage = 10
+        self.scorer_name = None
+        self.scorer_parameters = None
+        self.runnable = None
 
     def load_json(self, json_file):
         if os.path.exists(json_file):
             import json
             cfg_values = json.load(file(json_file, 'r'))
-            self._process_config_values(cfg_values)
+            return self._process_config_values(cfg_values)
         else:
             logging.error("%s does not exist.", json_file)
+        return False
 
     def load_yaml(self, yaml_file):
-        if os.path.exists(yaml_file):
-            import yaml
-            cfg_values = yaml.load(file(yaml_file, 'r'))
-            self._process_config_values(cfg_values)
+        if module_available('yaml'):
+            if os.path.exists(yaml_file):
+                import yaml
+                cfg_values = yaml.load(file(yaml_file, 'r'))
+                return self._process_config_values(cfg_values)
+            else:
+                logging.error("%s does not exist.", yaml_file)
         else:
-            logging.error("%s does not exist.", yaml_file)
+            print "Please install pyyaml first"
+        return False
+
+    def _assert(self, condition, message, level='error'):
+        self.runnable = True
+        if not condition:
+            if level == 'error':
+                logging.error(message)
+                self.runnable = False
+            else:
+                logging.warn(message)
+
+    def analyze(self):
+        self._assert(self.target_name is not None, "Target name cannot be None")
+        self._assert(len(self.estimators) > 0, "At least one estimator needs be defined")
+        estimators_types = {self._get_estimator_type(est.name) for est in self.estimators}
+        if len(estimators_types) == 1 and estimators_types.issubset({'classification', 'regression'}):
+            self.estimator_type = list(estimators_types)[0]
+        else:
+            self._assert(False, "Not all estimators have the same type")
+        if self.scorer_name is None:
+            if self.estimator_type == 'classification':
+                self.scorer_name = 'accuracy'
+            else:
+                self.scorer_name = 'r2'
+        if self.scorer_name in SlerConfigManager._CLASSIFICATION_SCORERS:
+            self._assert(self.estimator_type == 'classification', "Scoring type is different from the estimators type")
+        elif self.scorer_name in SlerConfigManager._REGRESSION_SCORERS:
+            self._assert(self.estimator_type == 'regression', "Scoring type is different from the estimators type")
+        else:
+            self._assert(False, "Unknown scoring method: %s" % self.scorer_name)
+        if self.feature_names is not None:
+            self._assert(self.target_name not in self.feature_names, "Target cannot also be one of the features")
+        self._assert(0 < self.test_percentage < 100, "split should be between 1 and 99")
+
+
+    def get_scorer(self):
+        if self.scorer_name in SlerConfigManager._CLASSIFICATION_SCORERS:
+            return SlerConfigManager._CLASSIFICATION_SCORERS[self.scorer_name]
+        elif self.scorer_name in SlerConfigManager._REGRESSION_SCORERS:
+            return SlerConfigManager._REGRESSION_SCORERS[self.scorer_name]
+        return None
 
     def _process_config_values(self, cfg):
         if 'pre' in cfg:
             self._process_pre_configuration(cfg['pre'])
         else:
-            logging.error("The configuration should specify the input")
-            return
-        if 'estimators' in cfg:
-            self._process_estimators_configuration(cfg['estimators'])
+            logging.error("The configuration should have a 'pre' key")
+            return False
+        if 'train' in cfg:
+            self._process_training_configuration(cfg['train'])
+        else:
+            logging.error("The configuration should have a 'train' key")
+            return False
+        return True
+
+    def _process_training_configuration(self, training_cfg):
+        if 'estimators' in training_cfg and len(training_cfg['estimators']) > 0:
+            self._process_estimators_configuration(training_cfg['estimators'])
         else:
             logging.error("The configuration should specify at least one estimator")
+        if 'scoring' in training_cfg:
+            scoring = training_cfg['scoring']
+            method = scoring['method']
+            del scoring['method']
+            self.set_scorer(method, scoring)
 
     def _process_estimators_configuration(self, estimators_cfg):
         logging.debug("Estimator config is %s", estimators_cfg)
@@ -133,11 +220,6 @@ class SlerConfigManager(object):
             return 'classification'
         return 'unknown'
 
-    def _can_add_estimator(self, name):
-        if len(self.estimators) > 0:
-            return self._get_estimator_type(name) == self.estimator_type
-        return True
-
     def remove_estimator(self, name):
         """
         Remove an estimator, given its name
@@ -159,12 +241,17 @@ class SlerConfigManager(object):
         :param generate: either 'all', 'random', or 'random:N'. 'all' forces sler to create all possible models given
         the hyper parameters. 'random:N' only creates N many random models. If N is omitted, N will be set to 5.
         """
-        if self._can_add_estimator(name):
-            est = EstimatorWrapper(name, parameters, hyperparameters, generate)
-            self.estimators.append(est)
-            self.estimator_type = est._type
-        else:
-            logging.warn("Cannot add %s. Its type does not match the existing estimators.")
+        est = EstimatorWrapper(name, parameters, hyperparameters, generate)
+        self.estimators.append(est)
+
+    def set_scorer(self, scorer_name, parameters = None):
+        """
+        Set the evaluator.
+        :param name: For classifications, one of accuracy, precision, recall, or f1. For regression, one of absolute, squared, or r2.
+        :param parameters: an optional dictionary of parameter names and values to be passed to the scorer
+        """
+        self.scorer_name = scorer_name
+        self.scorer_parameters = {} if parameters is None else parameters
 
     def set_feature_names(self, names):
         """
@@ -205,17 +292,12 @@ class SlerConfigManager(object):
         """
         self.test_percentage = percentage
 
+
 class ScikitLearnEasyRunner(object):
     def __init__(self, _input, config_file=None):
         warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
+        self._input = _input
         self.config = SlerConfigManager()
-        if config_file is not None:
-            if config_file.endswith('.json'):
-                self.config.load_json(config_file)
-            elif config_file.endswith('.yml') or config_file.endswith('.yaml'):
-                self.config.load_yaml(config_file)
-            else:
-                logging.error("Unknown config extension: %s. Expecting a file with json, yml, or yaml extension", config_file)
         self.dataframe = None
         self.original_dataframe = None
         self.train_features = None
@@ -224,9 +306,18 @@ class ScikitLearnEasyRunner(object):
         self.test_target = None
         self.pred_df = None
         self.estimators = None
-        self._load_input(_input)
+        self.scorer = None
+        self.config_loaded = False
+        if config_file is not None:
+            if config_file.endswith('.json'):
+                self.config_loaded = self.config.load_json(config_file)
+            elif config_file.endswith('.yml') or config_file.endswith('.yaml'):
+                self.config_loaded = self.config.load_yaml(config_file)
+            else:
+                logging.error("Unknown config extension: %s. Expecting a file with json, yml, or yaml extension", config_file)
 
     def _pre_process(self):
+        self.scorer = self.config.get_scorer()
         self.estimators = {e.name: e.get_estimator() for e in self.config.estimators}
         self._rescale()
         self._impute()
@@ -305,43 +396,55 @@ class ScikitLearnEasyRunner(object):
             if self.config.estimator_type == 'regression':
                 self.pred_df['ensemble'] = self.pred_df.mean(axis=1)
             elif self.config.estimator_type == 'classification':
-                self.pred_df['ensemble'] = self.pred_df.mode(axis=1)
+                if module_available('scipy'):
+                    import scipy.stats
+                    self.pred_df['ensemble'] = self.pred_df.apply(lambda x: scipy.stats.mode(x)[0][0], axis=1)
         self.pred_df['actual'] = self.test_target.values
 
     def _get_score(self, actual, prediction):
         if self.config.estimator_type == 'classification':
-            score = sklearn.metrics.accuracy_score(actual, prediction)
+            score = self.scorer(actual, prediction, **self.config.scorer_parameters)
         else:
-            score = sklearn.metrics.r2_score(actual, prediction)
+            score = self.scorer(actual, prediction, **self.config.scorer_parameters)
         return score
 
     def get_model(self, name):
-        if hasattr(self.estimators[name], 'best_estimator_ '):
+        if hasattr(self.estimators[name], 'best_estimator_'):
             return self.estimators[name].best_estimator_
         return self.estimators[name]
 
     def report(self):
         for name in self.estimators:
             score = self._get_score(self.test_target, self.pred_df[name])
-            print "Accuracy Score for %s: %f"%(name, score)
+            print "%s score for %s: %f"%(self.config.scorer_name, name, score)
             if hasattr(self.estimators[name], 'best_params_'):
-                print "Best hyper parameters for %s: %s"%(name, self.estimators[name].best_params_)
+                print "\tBest hyper parameters for %s: %s"%(name, self.estimators[name].best_params_)
             print
         if 'ensemble' in self.pred_df:
             score = self._get_score(self.test_target, self.pred_df['ensemble'])
-            print "Accuracy Score for ensemble: %f" % (score, )
+            print "%s score for ensemble: %f" % (self.config.scorer_name, score, )
             print
         print self.pred_df.head(10)
         print
 
     def run(self):
-        print "Preprocessing..."
-        self._pre_process()
-        print "Training the estimators..."
-        self.fit()
-        print "Creating predictions..."
-        self.predict()
-        self.report()
+        if self.config_loaded:
+            print "Analyzing the configuration..."
+            self.config.analyze()
+            if self.config.runnable:
+                print "Loading the input..."
+                self._load_input(self._input)
+                print "Pre-processing..."
+                self._pre_process()
+                print "Training the estimators..."
+                self.fit()
+                print "Creating predictions..."
+                self.predict()
+                self.report()
+            else:
+                print "Cannot run sler due to configuration error"
+        else:
+            print "Unable to load the config file successfully."
 
 
 def run_sler(_input, _config):

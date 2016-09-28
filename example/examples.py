@@ -5,27 +5,27 @@ import sys
 import inspect
 
 
-def iris(*params):
+def example_iris(*params):
     iris = datasets.load_iris()
     run_sler(iris, 'iris.yml')
 
 
-def boston(*params):
+def example_boston(*params):
     boston = datasets.load_boston()
     run_sler(boston, 'boston.yml')
 
 
-def titanic_yaml(*params):
+def example_titanic_yaml(*params):
     titanic_dataframe = pd.read_csv('titanic.csv')
     run_sler(titanic_dataframe, 'titanic.yml')
 
 
-def titanic_json(*params):
+def example_titanic_json(*params):
     titanic_dataframe = pd.read_csv('titanic.csv')
     run_sler(titanic_dataframe, 'titanic.json')
 
 
-def interactive(*params):
+def example_interactive(*params):
     sler = ScikitLearnEasyRunner('titanic.csv')
     mparams = {'random_state': 1}
     mhyperparams = {'penalty': ('l1', 'l2'), 'C': (0.1, 1, 10)}
@@ -45,8 +45,8 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print "Please provide the example name that you want to run"
         sys.exit(1)
-    example_name = sys.argv[1]
+    example_name = 'example_' + sys.argv[1]
     all_functions = {name: data for name, data in inspect.getmembers(sys.modules[__name__], inspect.isfunction)}
     if example_name in all_functions:
-        print "Running the example '%s'..."%example_name
+        print "Running the example '%s'..."%sys.argv[1]
         all_functions[example_name](*sys.argv[2:])
