@@ -26,5 +26,6 @@ class TestSler(TestCase):
         self.assertEqual({'age': 'mean'}, cm.impute)
         self.assertEqual('precision', cm.scorer_name)
         self.assertEqual({'average': 'weighted'}, cm.scorer_parameters)
+        self.assertEqual(({'height', 'weight'}, 3), cm.polynomials)
 
         self.assertTrue(cm.runnable)

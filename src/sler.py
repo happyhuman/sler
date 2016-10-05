@@ -2,11 +2,12 @@ import imp
 import os.path
 import os.path
 import logging
+import sklearn
 import argparse
 import warnings
-import pandas as pd
-import sklearn
 import sklearn.svm
+import numpy as np
+import pandas as pd
 import sklearn.metrics
 import sklearn.ensemble
 import sklearn.neighbors
@@ -107,6 +108,7 @@ class SlerConfigManager(object):
         self.scorer_name = None
         self.scorer_parameters = {}
         self.runnable = None
+        self.polynomials = None
 
     def load_json(self, json_file):
         if os.path.exists(json_file):
@@ -160,7 +162,9 @@ class SlerConfigManager(object):
         if self.feature_names is not None:
             self._assert(self.target_name not in self.feature_names, "Target cannot also be one of the features")
         self._assert(0 < self.test_percentage < 100, "split should be between 1 and 99")
-
+        feat, degree = self.polynomials
+        self._assert(len(feat), "Two or more features needed for polynomial transformation")
+        self._assert(np.equal(np.mod(degree, 1), 0) and degree > 1, "For polynomial transformation, degree must be an integer bigger than 1")
 
     def get_scorer(self):
         if self.scorer_name in SlerConfigManager._CLASSIFICATION_SCORERS:
@@ -207,10 +211,8 @@ class SlerConfigManager(object):
         self.set_rescalings(pre_cfg.get('rescale'))
         self.vectorize = pre_cfg.get('vectorize')
         self.set_train_test_split(pre_cfg.get('split', 10))
-        if self.target_name is None:
-            logging.error("target should be specified")
-        elif self.feature_names is not None and self.target_name in self.feature_names:
-            logging.error("target cannot also be one of the features")
+        if 'poly' in pre_cfg:
+            self.set_polynomial_features(pre_cfg['poly'].get('features'), pre_cfg['poly'].get('degree', 2))
 
     def _get_estimator_type(self, name):
         if name in EstimatorWrapper._REGRESSION_ESTIMATORS:
@@ -218,6 +220,14 @@ class SlerConfigManager(object):
         elif name in EstimatorWrapper._CLASSIFICATION_ESTIMATORS:
             return 'classification'
         return 'unknown'
+
+    def set_polynomial_features(self, features, degree=2):
+        """
+        Set new polynomial features for the given features and with the given degree
+        :param features: a list of the input features (two or more features)
+        :param degree: an integer bigger than 1
+        """
+        self.polynomials = set(features), degree
 
     def remove_estimator(self, name):
         """
@@ -298,7 +308,9 @@ class ScikitLearnEasyRunner(object):
         self._input = _input
         self.config = SlerConfigManager()
         self.dataframe = None
+        self.target = None
         self.original_dataframe = None
+        self.features_dataframe = None
         self.train_features = None
         self.train_target = None
         self.test_features = None
@@ -319,8 +331,10 @@ class ScikitLearnEasyRunner(object):
         self.estimators = {e.name: e.get_estimator() for e in self.config.estimators}
         self._rescale()
         self._impute()
-        #TODO: Where should I do vectorization?
         self._prep_features_target()
+        self._poly()
+        self._convert_categorical_to_boolean()
+        self._train_test_split()
 
     def _rescale(self):
         if self.config.rescale is not None:
@@ -334,6 +348,16 @@ class ScikitLearnEasyRunner(object):
         if self.config.impute is not None:
             for feature, value in self.config.impute.iteritems():
                 self._fillna(feature, value)
+
+    def _poly(self):
+        if self.config.polynomials is not None:
+            poly = sklearn.preprocessing.PolynomialFeatures(self.config.polynomials[1])
+            poly_features = poly.fit_transform(self.dataframe[list(self.config.polynomials[0])])
+            poly_feature_names = ['poly_feature_%d'%i for i in range(1, poly_features.shape[1] + 1)]
+            poly_df = pd.DataFrame(poly_features, columns = poly_feature_names)
+            remaining_columns = list(set(self.dataframe.columns).difference(self.config.polynomials[0]))
+            remaining_df = self.dataframe[remaining_columns]
+            self.dataframe = pd.concat([remaining_df, poly_df], axis=1)
 
     def _load_input(self, _input):
         if isinstance(_input, str):
@@ -357,14 +381,18 @@ class ScikitLearnEasyRunner(object):
         self.original_dataframe = self.dataframe.copy()
 
     def _prep_features_target(self):
-        target = self.dataframe[self.config.target_name].copy()
+        self.target = self.dataframe[self.config.target_name].copy()
         if self.config.feature_names is None:
-            features = self.dataframe.copy()
-            del features[self.config.target_name]
+            self.features_dataframe = self.dataframe.copy()
+            del self.features_dataframe[self.config.target_name]
         else:
-            features = self.dataframe[self.config.feature_names].copy()
-        features = pd.get_dummies(features)
-        splits = sklearn.cross_validation.train_test_split(features, target, test_size=self.config.test_percentage / 100.0)
+            self.features_dataframe = self.dataframe[self.config.feature_names].copy()
+
+    def _convert_categorical_to_boolean(self):
+        self.features_dataframe = pd.get_dummies(self.features_dataframe)
+
+    def _train_test_split(self):
+        splits = sklearn.cross_validation.train_test_split(self.features_dataframe, self.target, test_size=self.config.test_percentage / 100.0)
         self.train_features, self.test_features, self.train_target, self.test_target = splits
 
     def _fillna(self, feature, value):

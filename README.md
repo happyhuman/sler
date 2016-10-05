@@ -24,7 +24,7 @@ sler depends on the following libraries, which should be straight forward to ins
 
 # Usage
 In order to run sler, you need to define at least three elements:
-- An input (e.g. a csv file, a scikit-learn Bunch, etc)
+- An input: a csv or xlsx file, a scikit-learn Bunch, or a pandas DataFrame
 - The target/response column
 - An estimator
 

@@ -25,11 +25,11 @@ pre:
   target: cancer
   rescale:
     age: standardize
-  #poly:
-  #  degree: 2
-  #  features:
-  #    - age
-  #    - age
+  poly:
+    degree: 3
+    features:
+      - weight
+      - height
   #vectorize:
   impute:
     age: mean # or mode, median
