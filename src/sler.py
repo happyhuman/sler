@@ -162,9 +162,10 @@ class SlerConfigManager(object):
         if self.feature_names is not None:
             self._assert(self.target_name not in self.feature_names, "Target cannot also be one of the features")
         self._assert(0 < self.test_percentage < 100, "split should be between 1 and 99")
-        feat, degree = self.polynomials
-        self._assert(len(feat), "Two or more features needed for polynomial transformation")
-        self._assert(np.equal(np.mod(degree, 1), 0) and degree > 1, "For polynomial transformation, degree must be an integer bigger than 1")
+        if self.polynomials is not None:
+            feat, degree = self.polynomials
+            self._assert(len(feat), "Two or more features needed for polynomial transformation")
+            self._assert(np.equal(np.mod(degree, 1), 0) and degree > 1, "For polynomial transformation, degree must be an integer bigger than 1")
 
     def get_scorer(self):
         if self.scorer_name in SlerConfigManager._CLASSIFICATION_SCORERS:
@@ -339,10 +340,18 @@ class ScikitLearnEasyRunner(object):
     def _rescale(self):
         if self.config.rescale is not None:
             for feature, value in self.config.rescale.iteritems():
-                if value == 'standardize':
-                    self.dataframe[feature] = sklearn.preprocessing.StandardScaler().fit_transform(self.dataframe[feature].reshape(-1, 1))
-                elif value in {'normalize', 'minmax'}:
-                    self.dataframe[feature] = sklearn.preprocessing.MinMaxScaler().fit_transform(self.dataframe[feature].reshape(-1, 1))
+                minimum = self.dataframe[feature].min()
+                maximum = self.dataframe[feature].max()
+                difference = float(maximum - minimum)
+                if difference == 0:
+                    logging.error("All values in %s are the same. Unable to rescale it.", feature)
+                else:
+                    if value == 'standardize':
+                        average = self.dataframe[feature].mean()
+                        sd = self.dataframe[feature].std()
+                        self.dataframe[feature] = self.dataframe[feature].apply(lambda x: (x - average)/ sd)
+                    elif value in {'normalize', 'minmax'}:
+                        self.dataframe[feature] = self.dataframe[feature].apply(lambda x: (x - minimum)/ difference)
 
     def _impute(self):
         if self.config.impute is not None:
@@ -351,9 +360,10 @@ class ScikitLearnEasyRunner(object):
 
     def _poly(self):
         if self.config.polynomials is not None:
-            poly = sklearn.preprocessing.PolynomialFeatures(self.config.polynomials[1])
-            poly_features = poly.fit_transform(self.dataframe[list(self.config.polynomials[0])])
-            poly_feature_names = ['poly_feature_%d'%i for i in range(1, poly_features.shape[1] + 1)]
+            feat, degree = self.config.polynomials
+            poly = sklearn.preprocessing.PolynomialFeatures(degree)
+            poly_features = poly.fit_transform(self.dataframe[list(feat)])
+            poly_feature_names = ['__polynomial_feature_%d__'%i for i in range(1, poly_features.shape[1] + 1)]
             poly_df = pd.DataFrame(poly_features, columns = poly_feature_names)
             remaining_columns = list(set(self.dataframe.columns).difference(self.config.polynomials[0]))
             remaining_df = self.dataframe[remaining_columns]

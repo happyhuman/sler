@@ -32,7 +32,9 @@ def example_interactive(*params):
     _hyperparams = {'penalty': ('l1', 'l2'), 'C': (0.1, 1, 10)}
     sler.config.add_estimator('logistic regression', _params, _hyperparams)
     sler.config.set_target_name('Survived')
-    sler.config.set_imputations({'Age': 'normalize'})
+    sler.config.set_rescalings({'Fare': 'standardize', 'Age': 'normalize'})
+    sler.config.set_imputations({'Age': 'mean'})
+    sler.config.set_polynomial_features(['Age', 'Fare'], 3)
     sler.run()
     if len(params) > 0:
         print "Saving the model to '%s'"%params[0]
