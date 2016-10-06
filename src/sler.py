@@ -391,6 +391,7 @@ class ScikitLearnEasyRunner(object):
         self.original_dataframe = self.dataframe.copy()
 
     def _prep_features_target(self):
+        self.dataframe = self.dataframe.dropna()
         self.target = self.dataframe[self.config.target_name].copy()
         if self.config.feature_names is None:
             self.features_dataframe = self.dataframe.copy()
@@ -472,7 +473,7 @@ class ScikitLearnEasyRunner(object):
             self._load_input(self._input)
             print "Pre-processing..."
             self._pre_process()
-            print "Training the estimators..."
+            print "Training the estimators based on %s rows..."%len(self.features_dataframe)
             self.fit()
             print "Creating predictions..."
             self.predict()
