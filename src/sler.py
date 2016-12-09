@@ -11,11 +11,10 @@ import pandas as pd
 import sklearn.metrics
 import sklearn.ensemble
 import sklearn.neighbors
-import sklearn.grid_search
+import sklearn.model_selection
 import sklearn.linear_model
 import sklearn.datasets.base
 import sklearn.preprocessing
-import sklearn.cross_validation
 
 
 def module_available(module_name):
@@ -67,10 +66,10 @@ class EstimatorWrapper(object):
 
     def get_estimator(self):
         if self.generate == 'all':
-            estimator = sklearn.grid_search.GridSearchCV(self.estimator, self.hyperparameters, n_jobs=2)
+            estimator = sklearn.model_selection.GridSearchCV(self.estimator, self.hyperparameters, n_jobs=2)
         elif self.generate.startswith('random'):
             n_iter = int(self.generate[len('random:'):]) if self.generate.startswith('random:') else 5
-            estimator = sklearn.grid_search.RandomizedSearchCV(self.estimator, self.hyperparameters, n_iter, n_jobs=2)
+            estimator = sklearn.model_selection.RandomizedSearchCV(self.estimator, self.hyperparameters, n_iter, n_jobs=2)
         else:
             logging.error("Unknown generate parameter: %s. Ignoring hyperparameters", self.generate)
             estimator = self.estimator
@@ -403,7 +402,7 @@ class ScikitLearnEasyRunner(object):
         self.features_dataframe = pd.get_dummies(self.features_dataframe)
 
     def _train_test_split(self):
-        splits = sklearn.cross_validation.train_test_split(self.features_dataframe, self.target, test_size=self.config.test_percentage / 100.0)
+        splits = sklearn.model_selection.train_test_split(self.features_dataframe, self.target, test_size=self.config.test_percentage / 100.0)
         self.train_features, self.test_features, self.train_target, self.test_target = splits
 
     def _fillna(self, feature, value):

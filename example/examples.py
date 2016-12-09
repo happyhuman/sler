@@ -73,3 +73,5 @@ if __name__ == '__main__':
     if example_name in all_functions:
         print "Running the example '%s'..."%sys.argv[1]
         all_functions[example_name](*sys.argv[2:])
+    else:
+        print "Unknown example name: %s" % sys.argv[1]
